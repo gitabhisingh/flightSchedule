@@ -1,0 +1,355 @@
+<!DOCTYPE html>
+<html lang='en-us'>
+    <head>
+        <title>Flight Booking Page</title>
+        <script src='http://code.jquery.com/jquery-2.1.1.min.js'></script>
+
+        <style>
+            .flt{float: left;}
+            .flr{float: right;}
+            .clr{clear: both;}
+            .hidden{display: none;}
+
+            .mainContainer{border: 2px solid #b1b1b1; width: 65%;margin: 0 auto;}
+            .mainContainer > header{border-bottom: 2px solid #b1b1b1;}
+            .mainContainer header h1{margin: 10px;}
+            .mainContainer header p{margin-top: 22px;}
+
+            .contentContainer #left .toggle{border: 1px solid #b1b1b1;width: 60%;border-radius: 6px;margin: 8px 0 -7px 7px;border-bottom: 0;}
+            .contentContainer #left .toggle > div.active{background-color: #e6e6e6;}
+            .contentContainer #left .toggle > div{text-align: center;cursor: pointer;border-radius: 7px;}
+            .contentContainer #left .toggle .oneWay{border-right: 1px solid #b1b1b1;width: 50%;}
+            .contentContainer #left .toggle .return{width: 49%;}
+
+            .contentContainer #left .priceFilter{padding: 10px;border: 2px solid #b1b1b1;margin: 7px;}
+            .contentContainer #left .priceFilter > div{width: 50%;}
+            .contentContainer #left .priceFilter > div > input{width: 50%}
+            .refineSearch{
+                padding: 3px;
+                background-color: #e6e6e6;
+                border: 2px solid #b1b1b1;
+                cursor: pointer;
+                margin-top: 12px;
+            }
+            
+            .contentContainer #left{width: 24%;}
+            .contentContainer #right{width: 75%;border-left: 2px solid #b1b1b1;}
+            .contentContainer #right > header{border-bottom: 2px solid #b1b1b1;padding: 10px;}
+            .contentContainer #right > header h3{margin: 6px 0 0 0;}
+
+            .contentContainer .inputDiv{border: 2px solid #b1b1b1; margin: 7px;}
+            .contentContainer .inputDiv > input, .contentContainer .inputDiv > select{margin: 8px;}
+            .contentContainer .inputDiv .search{
+                padding: 3px;
+                background-color: #e6e6e6;
+                border: 2px solid #b1b1b1;
+                cursor: pointer;
+            }
+
+            .contentContainer #right #rightData .searchData{margin : 20px; padding: 20px; border: 2px solid #b1b1b1;}
+
+            #rightData .leftFlight, #rightData .rightFlight{width: 40%;}
+            #rightData .photo .pic{height: 79px; border: 2px solid #b1b1b1;margin-top: -18px;}
+            #rightData .photo > input{    
+                margin: 8px 0px 0px 0px;
+                padding: 8px;
+                background-color: #e6e6e6;
+                border: 2px solid #b1b1b1;
+                cursor: pointer;
+            }
+            #rightData .price{font-size: 20px;}
+            #rightData .pathFlight, #rightData .leftTripTimings{font-size: 18px;}
+            #rightData .flightId{margin: 10px 0 10px 0;}
+
+        </style>
+
+        <script>
+            var objFlight = {
+                flightsObj: [
+                    {
+                      "id": 0,
+                      "flightId": "AI-12130",
+                      "source": "new delhi",
+                      "sourceCode": "DEL",
+                      "destination": "new york",
+                      "destCode": "NYC",
+                      "depart": "10 PM",
+                      "arrive": "10 AM",
+                      "date": "2017-10-02",
+                      "price": 30000
+                    },
+                    {
+                      "id": 2,
+                      "flightId": "AD-12132",
+                      "source": "new delhi",
+                      "sourceCode": "DEL",
+                      "destination": "new york",
+                      "destCode": "NYC",
+                      "depart": "11 PM",
+                      "arrive": "10 AM",
+                      "date": "2017-10-02",
+                      "price": 20000
+                    },
+                    {
+                      "id": 3,
+                      "flightId": "AD-12133",
+                      "source": "new york",
+                      "sourceCode": "NYC",
+                      "destination": "new delhi",
+                      "destCode": "DEL",
+                      "depart": "11 PM",
+                      "arrive": "10 AM",
+                      "date": "2017-10-05",
+                      "price": 20000
+                    },
+                    {
+                      "id": 1,
+                      "flightId": "AI-12131",
+                      "source": "new york",
+                      "sourceCode": "NYC",
+                      "destination": "new delhi",
+                      "destCode": "DEL",
+                      "depart": "11 PM",
+                      "arrive": "10 AM",
+                      "date": "2017-10-03",
+                      "price": 10000
+                    }
+                ],
+                flights: {},
+                returnFlight: 1,
+                init: function(){
+                    objFlight.flights = objFlight.flightsObj.slice(0);
+                    objFlight.flights.sort(function(a,b) {
+                        return a.price - b.price;
+                    });
+                    objFlight.bindEvents();
+                },
+                bindEvents: function(){
+                    $('.inputDiv .search').click(function(){
+                        objFlight.searchFlights();
+                    });
+
+                    $('#left .toggle > div.flt').click(function(){
+                        $(this).addClass('active').siblings('.flt').removeClass('active');
+                        if($(this).attr('data-toggle') == 'oneway'){
+                            objFlight.returnFlight = 0;
+                            $('.returnDate').hide();
+                        } else{
+                            objFlight.returnFlight = 1;
+                            $('.returnDate').show();
+                        }
+                        objFlight.searchFlights();
+                    });
+                },
+                searchFlights: function(){
+                    $('.refineSearch').show();
+                    var departure = $('.inputDiv .departCity').val().toLowerCase();
+                    var arrival = $('.inputDiv .arriveCity').val().toLowerCase();
+                    var departDate = $('.inputDiv .departDate').val();
+                    var returnDate = objFlight.returnFlight == 1 ? $('.inputDiv .returnDate').val() : '';
+                    var minVal = $('#left .priceFilter .min input').val();
+                    var maxVal = $('#left .priceFilter .max input').val();
+                    var counter = 0;
+                    var departPrice = 0;
+                    var arrivalPrice= 0;
+                    $('#rightData').html('');
+                    $.each(objFlight.flights, function(i, v){
+                        if( v.source.includes(departure) && v.destination.includes(arrival) && (departDate == v.date) && (minVal <= v.price) && (maxVal >= v.price) ){
+                            $('#rightHeader').show();
+                            // Display Header
+                            if(counter == 0){
+                                //var headerSchedule = (objFlight.returnFlight == 1) ? ('<div class="first flt">'+ v.source.toUpperCase() +'</div><span class="flt">&nbsp;&gt;&nbsp;</span><div class="second flt">'+ v.destination.toUpperCase() +'</div><span class="flt">&nbsp;&gt;&nbsp;</span><div class="third flt">'+ v.source.toUpperCase() +'</div><div class="clr"></div>') : ('<div class="first flt">'+ v.source.toUpperCase() +'</div><span class="flt">&nbsp;&gt;&nbsp;</span><div class="second flt">'+ v.destination.toUpperCase() +'</div>');
+                                $('#rightHeader .first, #rightHeader .second').show();
+                                $('#rightHeader .first .firstVal').text(v.source.toUpperCase());
+                                $('#rightHeader .second .secondVal').text(v.destination.toUpperCase());
+                                if(objFlight.returnFlight == 1){
+                                    $('#rightHeader .third .thirdVal').text(v.source.toUpperCase());
+                                    $('#rightHeader .third').show();
+                                    $('#rightHeader .tripTimings .departTimings, #rightHeader .tripTimings .returnTimings').show();
+                                    $('#rightHeader .tripTimings .depart').text(departDate.split('-')[2] + '-' + departDate.split('-')[1] + '-' + departDate.split('-')[0]);
+                                    $('#rightHeader .tripTimings .arrive').text(returnDate.split('-')[2] + '-' + returnDate.split('-')[1] + '-' + returnDate.split('-')[0]);
+                                } else{
+                                    $('#rightHeader .third').hide();
+                                    $('#rightHeader .tripTimings .departTimings').show();
+                                    $('#rightHeader .tripTimings .returnTimings').hide();
+                                    $('#rightHeader .tripTimings .depart').text(departDate.split('-')[2] + '-' + departDate.split('-')[1] + '-' + departDate.split('-')[0]);
+                                }
+                                counter ++ ;
+                            }
+
+                            departPrice = v.price;
+                            // Display Flight Scehdule based on search
+                            var leftData = '<div class="leftFlight flt">\
+                                    <div class="flightId">'+ v.flightId +'</div>\
+                                    <div class="pathFlight">\
+                                        <div class="depart flt">'+ v.sourceCode +'</div><span class="flt">&nbsp;&gt;&nbsp;</span><div class="arrive flt">'+ v.destCode +'</div>\
+                                        <div class="clr"></div>\
+                                    </div>\
+                                    <div class="leftTripTimings">\
+                                        <div class="flt">Depart: </div>\
+                                        <div class="depart flt">'+ v.depart +'</div>\
+                                        <div class="clr"></div>\
+                                        <div class="flt">Arrive: </div>\
+                                        <div class="arrive flt">'+ v.arrive +'</div>\
+                                        <div class="clr"></div>\
+                                    </div>\
+                                </div>';
+
+                            var rightData ='';
+                            if(objFlight.returnFlight == 1){
+                                // Making Destination as Source for Return Flights
+                                var sourceFlag = v.destination;
+                                var destinationFlag = v.source;
+                                flag = 0;
+                                $.each(objFlight.flights, function(i, v){
+                                    if(returnDate == v.date && flag == 0 && sourceFlag == v.source && destinationFlag == v.destination && (minVal <= v.price) && (maxVal >= v.price)){
+                                        rightData = '<div class="rightFlight flt">\
+                                            <div class="flightId">'+ v.flightId +'</div>\
+                                            <div class="pathFlight">\
+                                                <div class="depart flt">'+ v.sourceCode +'</div><span class="flt">&nbsp;&gt;&nbsp;</span><div class="arrive flt">'+ v.destCode +'</div>\
+                                                <div class="clr"></div>\
+                                            </div>\
+                                            <div class="leftTripTimings">\
+                                                <div class="flt">Depart: </div>\
+                                                <div class="depart flt">'+ v.depart +'</div>\
+                                                <div class="clr"></div>\
+                                                <div class="flt">Arrive: </div>\
+                                                <div class="arrive flt">'+ v.arrive +'</div>\
+                                                <div class="clr"></div>\
+                                            </div>\
+                                        </div>';
+                                        flag = 1;
+                                        arrivalPrice = v.price;
+                                    } else if(flag == 0){
+                                        rightData = '';
+                                    }
+                                });
+                            }
+
+                            var passengers = $('.psssengerCount').val();
+                            //var totalPrice = (objFlight.returnFlight == 1) ? (departPrice + arrivalPrice) + ' (' + departPrice + ' + ' + arrivalPrice + ')' : (departPrice);
+                            var totalPrice = (passengers != null && passengers != 1 ) ? ((passengers*(departPrice + arrivalPrice)) + ' (' + passengers + 'x' + (departPrice + arrivalPrice) + ')') : (departPrice + arrivalPrice);
+
+                            $('#rightData').append('<div class="searchData">\
+                                <div class="price">Rs. ' + totalPrice + '</div>\
+                                <div>'+leftData + rightData + '\
+                                    <div class="photo flr">\
+                                        <div class="pic"></div>\
+                                        <input type="button" class="book" value="Book this flight" />\
+                                    </div>\
+                                    <div class="clr"></div>\
+                                </div>\
+                            </div>');
+                        }
+                    });
+                    if($('#rightData').html() == ''){
+                        $('#rightHeader').hide();
+                        $('#rightData').html('<p style="color: red; margin: 125px;">No Flights found for particular search criteria.</p>');
+                    }
+                }
+
+            }
+
+            function docReady(){
+                // Set Default Date in Search
+                /*var now = new Date();
+                var today = now.getFullYear()  + '-' + (now.getMonth() + 1) + '-' + now.getDate();
+                $('.inputDiv .departDate').val(today);*/
+                   
+            }
+
+            $(document).ready(function(){
+                docReady();
+                objFlight.init();
+            });
+        </script>
+
+    </head>
+    <body>
+        
+        <div class="mainContainer">
+            <header><h1 class="flt">Flight Search Engine</h1><p class="flt"> (Try to search Flights Between Delhi and New York)</p><div class="clr"></div></header>
+            <div class="contentContainer">
+                <section id="left" class="flt">
+                    <div class="toggle">
+                        <div class="oneWay flt" data-toggle="oneway">One Way</div>
+                        <div class="return active flt" data-toggle="return">Return</div>
+                        <div class="clr"></div>
+                    </div>
+                    <div class="inputDiv">
+                        <input type="text" name="depart" class="departCity" placeholder="Enter Origin City" value="Del" />
+                        <input type="text" name="arrive" class="arriveCity" placeholder="Enter Destination City" value="New Yor" />
+                        <input type="date" placeholder="Enter Departure Date" class="departDate" name="departDate" value="2017-10-02" />
+                        <input type="date" placeholder="Enter Return Date" class="returnDate" name="returnDate" value="2017-10-05" />
+                        <select class="psssengerCount">
+                            <option value="" selected disabled>Passengers</option>
+                            <option value="1">1</option>
+                            <option value="2">2</option>
+                            <option value="3">3</option>
+                            <option value="4">4</option>
+                            <option value="5">5</option>
+                        </select>
+                        <br />
+                        <input type="button" value="Search" class="search" />
+                    </div>
+                    <div class="priceFilter">
+                        <h3>Refine Flight Search</h3>
+                        <div class="min flt">
+                            Min:<input type="text" value="0" />
+                        </div>
+                        <div class="max flr">
+                            Max:<input type="text" value="100000" />
+                        </div>
+                        <div class="clr"></div>
+                        <input type="button" class="refineSearch hidden" value="Refine Search" onClick="objFlight.searchFlights();" />
+                    </div>
+                </section>
+
+                <section id="right" class="flr">
+                    <header id="rightHeader" class="hidden">
+                        <div class="tripPath">
+                            <div class="flt">
+                                <h3>
+                                    <div class="first flt hidden">
+                                        <div class="firstVal flt"></div>
+                                        <span class="flt">&nbsp;&gt;&nbsp;</span>
+                                    </div>
+
+                                    <div class="second flt hidden">
+                                        <div class="secondVal flt"></div>
+                                    </div>
+                                    <div class="third flt hidden">
+                                        <span class="flt">&nbsp;&gt;&nbsp;</span>
+                                        <div class="thirdVal flt"></div>
+                                    </div>
+                                    <div class="clr"></div>
+                                </h3>
+                            </div>
+
+                            <div class="tripTimings flr">
+                                <div class="departTimings hidden">
+                                    <div class="flt"><b>Depart:&#160;</b></div>
+                                    <div class="depart flt"></div>
+                                </div>
+                                <div class="clr"></div>
+                                <div class="returnTimings hidden">
+                                    <div class="flt"><b>Return:&#160;</b></div>
+                                    <div class="arrive flt"></div>
+                                </div>
+                                <div class="clr"></div>
+                            </div>
+                            <div class="clr">
+                        </div>
+                    </header>
+                    <section id="rightData">
+                        
+                    </section>
+                        
+                </section>
+
+                <div class="clr"></div>
+            </div>
+        </div>
+
+    </body>
+</html>
